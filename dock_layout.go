@@ -62,6 +62,19 @@ func (d *DockLayout) forEachDockContainer(f func(*DockContainer) bool) bool {
 	return false
 }
 
+// ForEachNode calls the given function for each of the layout's nodes that is a DockContainer or DockLayout.
+// Each call of the function will provide either a non-nil DockContainer OR a non-nil DockLayout.
+func (d *DockLayout) ForEachNode(f func(*DockContainer, *DockLayout)) {
+	for _, node := range d.nodes {
+		switch c := node.(type) {
+		case *DockContainer:
+			f(c, nil)
+		case *DockLayout:
+			f(nil, c)
+		}
+	}
+}
+
 // RootLayout returns the topmost parent DockLayout.
 func (d *DockLayout) RootLayout() *DockLayout {
 	root := d
