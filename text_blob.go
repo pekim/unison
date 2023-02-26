@@ -17,9 +17,18 @@ func newTextBlob(textBlob skia.TextBlob) *TextBlob {
 	}
 	tb := &TextBlob{TextBlob: textBlob}
 	runtime.SetFinalizer(tb, func(obj *TextBlob) {
-		ReleaseOnUIThread(func() {
-			skia.TextBlobUnref(tb.TextBlob)
-		})
+		tb.Unref()
 	})
+
 	return tb
+}
+
+func (tb *TextBlob) Unref() {
+	runtime.SetFinalizer(tb, nil)
+	ReleaseOnUIThread(func() {
+		if tb.TextBlob != nil {
+			skia.TextBlobUnref(tb.TextBlob)
+			tb.TextBlob = nil
+		}
+	})
 }
