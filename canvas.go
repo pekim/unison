@@ -270,3 +270,7 @@ func (c *Canvas) IsClipRect() bool {
 func (c *Canvas) Flush() {
 	skia.CanvasFlush(c.canvas)
 }
+
+func (c *Canvas) SkiaCanvas() skia.Canvas {
+	return c.canvas
+}
