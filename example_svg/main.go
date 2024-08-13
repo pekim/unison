@@ -9,6 +9,9 @@ import (
 //go:embed gopher.svg
 var gopherSvg string
 
+//go:embed tiger.svg
+var tigerSvg string
+
 func main() {
 	unison.AttachConsole()
 	unison.Start(unison.StartupFinishedCallback(func() {
@@ -88,8 +91,17 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 		svg := unison.DrawableSVG2{
 			SVG: unison.MustSVG2FromContentString(gopherSvg),
 		}
-		gopherWidth := float32(200)
-		gopherHeight := gopherWidth / svg.SVG.AspectRatio()
-		svg.DrawInRect(canvas, unison.NewRect(50, 150, gopherWidth, gopherHeight), nil, nil)
+		width := float32(200)
+		height := width / svg.SVG.AspectRatio()
+		svg.DrawInRect(canvas, unison.NewRect(50, 150, width, height), nil, nil)
+	}
+
+	{
+		svg := unison.DrawableSVG2{
+			SVG: unison.MustSVG2FromContentString(tigerSvg),
+		}
+		width := float32(400)
+		height := width / svg.SVG.AspectRatio()
+		svg.DrawInRect(canvas, unison.NewRect(300, 150, width, height), nil, nil)
 	}
 }
