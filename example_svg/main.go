@@ -4,6 +4,7 @@ import (
 	_ "embed"
 
 	"github.com/richardwilkes/unison"
+	"github.com/richardwilkes/unison/enums/paintstyle"
 )
 
 //go:embed gopher.svg
@@ -14,6 +15,10 @@ var tigerSvg string
 
 //go:embed black-king.svg
 var blackKingSvg string
+
+const circledChevronSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/>
+</svg>`
 
 func main() {
 	unison.AttachConsole()
@@ -83,11 +88,19 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 
 	{
 		svg := unison.DrawableSVG2{
-			SVG: unison.MustSVG2FromContentString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-    <path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/>
-</svg>`),
+			SVG: unison.MustSVG2FromContentString(circledChevronSvg),
 		}
 		svg.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, nil)
+	}
+
+	{
+		svg := unison.DrawableSVG2{
+			SVG: unison.MustSVG2FromContentString(circledChevronSvg),
+		}
+		paint := unison.NewPaint()
+		paint.SetColor(unison.RGB(0xff, 0x00, 0x00))
+		paint.SetStyle(paintstyle.Fill)
+		svg.DrawInRect(canvas, unison.NewRect(300, 0, 100, 100), nil, paint)
 	}
 
 	{

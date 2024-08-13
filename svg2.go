@@ -112,7 +112,12 @@ func (s *DrawableSVG2) LogicalSize() Size {
 }
 
 // DrawInRect implements the Drawable interface.
-func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions, _ *Paint) {
+//
+// If paint is not nil the SVG paths will be drawn with the provided paint.
+// Be sure to set the Paint's style (fill or stroke) as desired.
+// Any fill or stroke attributes in the SVG source will be ignored.
+// This is for backwards compatabality with an earlier SVG implementation.
+func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions, paint *Paint) {
 	canvas.Save()
 	defer canvas.Restore()
 
@@ -120,6 +125,10 @@ func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions,
 	canvas.Scale(rect.Width/s.SVG.size.Width, rect.Height/s.SVG.size.Height)
 
 	for _, path := range s.SVG.paths {
-		path.draw(canvas)
+		if paint == nil {
+			path.draw(canvas)
+		} else {
+			path.drawWithPaint(canvas, paint)
+		}
 	}
 }

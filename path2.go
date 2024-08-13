@@ -160,3 +160,9 @@ func (p *Path2) draw(canvas *Canvas) {
 		canvas.DrawPath2(p, p.strokePaint)
 	}
 }
+
+func (p *Path2) drawWithPaint(canvas *Canvas, paint *Paint) {
+	paint2 := paint.Clone()
+	paint2.SetAntialias(true)
+	canvas.DrawPath2(p, paint2)
+}
