@@ -9,34 +9,30 @@
 
 package unison
 
-// import (
-// 	_ "embed"
-// 	"fmt"
-// 	"io"
-// 	"os"
-// 	"strconv"
-// 	"strings"
+import (
+	_ "embed"
+	"io"
+	"strconv"
+	"strings"
 
-// 	svg "github.com/lafriks/go-svg"
-// 	"github.com/richardwilkes/toolbox/fatal"
-// 	"github.com/richardwilkes/unison/internal/skia"
-// )
+	svg "github.com/lafriks/go-svg"
+	"github.com/richardwilkes/toolbox/fatal"
+)
 
-// var _ Drawable = &DrawableSVG2{}
+var _ Drawable = &DrawableSVG2{}
 
-// // DrawableSVG makes an SVG conform to the Drawable interface.
-// type DrawableSVG2 struct {
-// 	SVG  *SVG2
-// 	Size Size
-// }
+// DrawableSVG makes an SVG conform to the Drawable interface.
+type DrawableSVG2 struct {
+	SVG  *SVG2
+	Size Size
+}
 
-// // SVG holds an SVG.
-// type SVG2 struct {
-// 	svg            *svg.Svg
-// 	unscaledPaths  []*Path
-// 	scaledPathsMap map[Size][]*Path
-// 	size           Size
-// }
+// SVG holds an SVG.
+type SVG2 struct {
+	svg   *svg.Svg
+	paths []*Path2
+	size  Size
+}
 
 // // MustSVG2 creates a new SVG the given svg path string (the contents of a single "d" attribute from an SVG "path"
 // // element) and panics if an error would be generated. The 'size' should be gotten from the original SVG's 'viewBox'
@@ -61,21 +57,21 @@ package unison
 // // 	}, nil
 // // }
 
-// // MustSVG2FromContentString creates a new SVG and panics if an error would be generated. The content should contain
-// // valid SVG file data. Note that this only reads a very small subset of an SVG currently. Specifically, the "viewBox"
-// // attribute and any "d" attributes from enclosed SVG "path" elements.
-// func MustSVG2FromContentString(content string) *SVG2 {
-// 	s, err := NewSVG2FromContentString(content)
-// 	fatal.IfErr(err)
-// 	return s
-// }
+// MustSVG2FromContentString creates a new SVG and panics if an error would be generated. The content should contain
+// valid SVG file data. Note that this only reads a very small subset of an SVG currently. Specifically, the "viewBox"
+// attribute and any "d" attributes from enclosed SVG "path" elements.
+func MustSVG2FromContentString(content string) *SVG2 {
+	s, err := NewSVG2FromContentString(content)
+	fatal.IfErr(err)
+	return s
+}
 
-// // NewSVGFromContentString creates a new SVG. The content should contain valid SVG file data. Note that this only reads
-// // a very small subset of an SVG currently. Specifically, the "viewBox" attribute and any "d" attributes from enclosed
-// // SVG "path" elements.
-// func NewSVG2FromContentString(content string) (*SVG2, error) {
-// 	return NewSVG2FromReader(strings.NewReader(content))
-// }
+// NewSVG2FromContentString creates a new SVG. The content should contain valid SVG file data. Note that this only reads
+// a very small subset of an SVG currently. Specifically, the "viewBox" attribute and any "d" attributes from enclosed
+// SVG "path" elements.
+func NewSVG2FromContentString(content string) (*SVG2, error) {
+	return NewSVG2FromReader(strings.NewReader(content))
+}
 
 // // MustSVG2FromReader creates a new SVG and panics if an error would be generated. The reader should contain valid SVG
 // // file data. Note that this only reads a very small subset of an SVG currently. Specifically, the "viewBox" attribute
@@ -86,80 +82,88 @@ package unison
 // 	return s
 // }
 
-// // NewSVG2FromReader creates a new SVG. The reader should contain valid SVG file data. Note that this only reads a very
-// // small subset of an SVG currently. Specifically, the "viewBox" attribute and any "d" attributes from enclosed SVG
-// // "path" elements.
-// func NewSVG2FromReader(r io.Reader) (*SVG2, error) {
-// 	svg, err := svg.Parse(r, svg.StrictErrorMode)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// NewSVG2FromReader creates a new SVG. The reader should contain valid SVG file data. Note that this only reads a very
+// small subset of an SVG currently. Specifically, the "viewBox" attribute and any "d" attributes from enclosed SVG
+// "path" elements.
+func NewSVG2FromReader(r io.Reader) (*SVG2, error) {
+	svg, err := svg.Parse(r, svg.StrictErrorMode)
+	if err != nil {
+		return nil, err
+	}
 
-// 	var size Size
-// 	if svg.Width != "" {
-// 		w, err := strconv.Atoi(svg.Width)
-// 		if err == nil {
-// 			size.Width = float32(w)
-// 		}
-// 	}
-// 	if svg.Height != "" {
-// 		h, err := strconv.Atoi(svg.Height)
-// 		if err == nil {
-// 			size.Height = float32(h)
-// 		}
-// 	}
-// 	if svg.ViewBox.W > 0 {
-// 		size.Width = float32(svg.ViewBox.W)
-// 	}
-// 	if svg.ViewBox.W > 0 {
-// 		size.Height = float32(svg.ViewBox.H)
-// 	}
+	var size Size
+	if svg.Width != "" {
+		w, err := strconv.Atoi(svg.Width)
+		if err == nil {
+			size.Width = float32(w)
+		}
+	}
+	if svg.Height != "" {
+		h, err := strconv.Atoi(svg.Height)
+		if err == nil {
+			size.Height = float32(h)
+		}
+	}
+	if svg.ViewBox.W > 0 {
+		size.Width = float32(svg.ViewBox.W)
+	}
+	if svg.ViewBox.W > 0 {
+		size.Height = float32(svg.ViewBox.H)
+	}
 
-// 	s := &SVG2{
-// 		svg:  svg,
-// 		size: size,
-// 	}
-// 	s.addPaths()
-// 	return s, nil
+	s := &SVG2{
+		svg:   svg,
+		paths: make([]*Path2, len(svg.SvgPaths)),
+		size:  size,
+	}
+	for i, path := range svg.SvgPaths {
+		p, err := newPath2(path)
+		if err != nil {
+			return nil, err
+		}
+		s.paths[i] = p
+	}
 
-// 	// var svgXML struct {
-// 	// 	ViewBox string `xml:"viewBox,attr"`
-// 	// 	Paths   []struct {
-// 	// 		Path string `xml:"d,attr"`
-// 	// 	} `xml:"path"`
-// 	// }
-// 	// if err := xml.NewDecoder(r).Decode(&svgXML); err != nil {
-// 	// 	return nil, errs.NewWithCause("unable to decode SVG", err)
-// 	// }
-// 	// svg := &SVG2{scaledPathMap: make(map[Size]*Path)}
-// 	// var width, height string
-// 	// if parts := strings.Split(svgXML.ViewBox, " "); len(parts) == 4 {
-// 	// 	width = parts[2]
-// 	// 	height = parts[3]
-// 	// }
-// 	// v, err := strconv.ParseFloat(width, 64)
-// 	// if err != nil || v < 1 || v > 4096 {
-// 	// 	return nil, errs.NewWithCause("unable to determine SVG width", err)
-// 	// }
-// 	// svg.size.Width = float32(v)
-// 	// v, err = strconv.ParseFloat(height, 64)
-// 	// if err != nil || v < 1 || v > 4096 {
-// 	// 	return nil, errs.NewWithCause("unable to determine SVG height", err)
-// 	// }
-// 	// svg.size.Height = float32(v)
-// 	// for i, svgPath := range svgXML.Paths {
-// 	// 	var p *Path
-// 	// 	if p, err = NewPathFromSVGString(svgPath.Path); err != nil {
-// 	// 		return nil, errs.NewWithCausef(err, "unable to decode SVG: path element #%d", i)
-// 	// 	}
-// 	// 	if svg.unscaledPath == nil {
-// 	// 		svg.unscaledPath = p
-// 	// 	} else {
-// 	// 		svg.unscaledPath.Path(p, false)
-// 	// 	}
-// 	// }
-// 	// return svg, nil
-// }
+	return s, nil
+
+	// // var svgXML struct {
+	// // 	ViewBox string `xml:"viewBox,attr"`
+	// // 	Paths   []struct {
+	// // 		Path string `xml:"d,attr"`
+	// // 	} `xml:"path"`
+	// // }
+	// // if err := xml.NewDecoder(r).Decode(&svgXML); err != nil {
+	// // 	return nil, errs.NewWithCause("unable to decode SVG", err)
+	// // }
+	// // svg := &SVG2{scaledPathMap: make(map[Size]*Path)}
+	// // var width, height string
+	// // if parts := strings.Split(svgXML.ViewBox, " "); len(parts) == 4 {
+	// // 	width = parts[2]
+	// // 	height = parts[3]
+	// // }
+	// // v, err := strconv.ParseFloat(width, 64)
+	// // if err != nil || v < 1 || v > 4096 {
+	// // 	return nil, errs.NewWithCause("unable to determine SVG width", err)
+	// // }
+	// // svg.size.Width = float32(v)
+	// // v, err = strconv.ParseFloat(height, 64)
+	// // if err != nil || v < 1 || v > 4096 {
+	// // 	return nil, errs.NewWithCause("unable to determine SVG height", err)
+	// // }
+	// // svg.size.Height = float32(v)
+	// // for i, svgPath := range svgXML.Paths {
+	// // 	var p *Path
+	// // 	if p, err = NewPathFromSVGString(svgPath.Path); err != nil {
+	// // 		return nil, errs.NewWithCausef(err, "unable to decode SVG: path element #%d", i)
+	// // 	}
+	// // 	if svg.unscaledPath == nil {
+	// // 		svg.unscaledPath = p
+	// // 	} else {
+	// // 		svg.unscaledPath.Path(p, false)
+	// // 	}
+	// // }
+	// return svg, nil
+}
 
 // func (s *SVG2) addPaths() {
 // 	s.unscaledPaths = make([]*Path, len(s.svg.SvgPaths))
@@ -287,17 +291,21 @@ package unison
 // 	return s.PathScaledTo(min(size.Width/s.size.Width, size.Height/s.size.Height))
 // }
 
-// // LogicalSize implements the Drawable interface.
-// func (s *DrawableSVG2) LogicalSize() Size {
-// 	return s.Size
-// }
+// LogicalSize implements the Drawable interface.
+func (s *DrawableSVG2) LogicalSize() Size {
+	return s.Size
+}
 
-// // DrawInRect implements the Drawable interface.
-// func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions, paint *Paint) {
-// 	fmt.Println("draw7")
-// 	canvas.Save()
-// 	defer canvas.Restore()
-// 	offset := s.SVG.OffsetToCenterWithinScaledSize(rect.Size)
-// 	canvas.Translate(rect.X+offset.X, rect.Y+offset.Y)
-// 	canvas.DrawPath(s.SVG.PathForSize(rect.Size), paint)
-// }
+// DrawInRect implements the Drawable interface.
+func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions, paint *Paint) {
+	canvas.Save()
+	defer canvas.Restore()
+	// offset := s.SVG.OffsetToCenterWithinScaledSize(rect.Size)
+	var offset Point
+	canvas.Translate(rect.X+offset.X, rect.Y+offset.Y)
+	// canvas.DrawPath(s.SVG.PathForSize(rect.Size), paint)
+
+	for _, path := range s.SVG.paths {
+		path.draw(canvas)
+	}
+}

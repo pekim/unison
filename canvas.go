@@ -153,6 +153,11 @@ func (c *Canvas) DrawPath(path *Path, paint *Paint) {
 	skia.CanvasDrawPath(c.canvas, path.path, paint.paint)
 }
 
+// DrawPath2 draws the path with Paint.
+func (c *Canvas) DrawPath2(path *Path2, paint *Paint) {
+	skia.CanvasDrawPath(c.canvas, path.path, paint.paint)
+}
+
 // DrawImage draws the image at the specified location using its logical size. paint may be nil.
 func (c *Canvas) DrawImage(img *Image, x, y float32, sampling *SamplingOptions, paint *Paint) {
 	c.DrawImageInRect(img, Rect{Point: Point{X: x, Y: y}, Size: img.LogicalSize()}, sampling, paint)
