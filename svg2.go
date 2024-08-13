@@ -28,7 +28,6 @@ type DrawableSVG2 struct {
 
 // SVG2 holds an SVG.
 type SVG2 struct {
-	svg   *svg.Svg
 	paths []*Path2
 	size  Size
 }
@@ -88,7 +87,6 @@ func NewSVG2FromReader(r io.Reader) (*SVG2, error) {
 	}
 
 	s := &SVG2{
-		svg:   svg,
 		paths: make([]*Path2, len(svg.SvgPaths)),
 		size:  size,
 	}

@@ -41,22 +41,19 @@ var strokeJoins = map[svg.JoinMode]strokejoin.Enum{
 
 // Path2 holds geometry.
 type Path2 struct {
-	svgPath     svg.SvgPath
 	path        skia.Path
 	fillPaint   *Paint // if nil don't draw
 	strokePaint *Paint // if nil don't draw
 }
 
 func newPath2(svgPath svg.SvgPath) (*Path2, error) {
-	p := &Path2{
-		svgPath: svgPath,
-	}
+	p := &Path2{}
 
-	p.createPath()
-	if err := p.createFillPaint(); err != nil {
+	p.createPath(svgPath)
+	if err := p.createFillPaint(svgPath); err != nil {
 		return nil, err
 	}
-	if err := p.createStrokePaint(); err != nil {
+	if err := p.createStrokePaint(svgPath); err != nil {
 		return nil, err
 	}
 
@@ -72,10 +69,10 @@ func newPath2(svgPath svg.SvgPath) (*Path2, error) {
 //
 // The coordinates used in svg.Operation are of type fixed.Int26_6, which has a fractional
 // part of 6 bits. When converting to a float the values are divided by 64.
-func (p *Path2) createPath() {
+func (p *Path2) createPath(svgPath svg.SvgPath) {
 	p.path = skia.PathNew()
 
-	for _, op := range p.svgPath.Path {
+	for _, op := range svgPath.Path {
 		switch op := op.(type) {
 		case svg.OpMoveTo:
 			skia.PathMoveTo(p.path, float32(op.X)/64.0, float32(op.Y)/64.0)
@@ -97,21 +94,21 @@ func (p *Path2) createPath() {
 		}
 	}
 
-	if p.svgPath.Style.Transform != svg.Identity {
+	if svgPath.Style.Transform != svg.Identity {
 		skia.PathTransform(p.path, geom.Matrix[float32]{
-			ScaleX: float32(p.svgPath.Style.Transform.A),
-			SkewX:  float32(p.svgPath.Style.Transform.C),
-			TransX: float32(p.svgPath.Style.Transform.E),
-			SkewY:  float32(p.svgPath.Style.Transform.B),
-			ScaleY: float32(p.svgPath.Style.Transform.D),
-			TransY: float32(p.svgPath.Style.Transform.F),
+			ScaleX: float32(svgPath.Style.Transform.A),
+			SkewX:  float32(svgPath.Style.Transform.C),
+			TransX: float32(svgPath.Style.Transform.E),
+			SkewY:  float32(svgPath.Style.Transform.B),
+			ScaleY: float32(svgPath.Style.Transform.D),
+			TransY: float32(svgPath.Style.Transform.F),
 		})
 	}
 }
 
-func (p *Path2) createFillPaint() error {
-	if p.svgPath.Style.FillerColor == nil ||
-		p.svgPath.Style.FillOpacity == 0 {
+func (p *Path2) createFillPaint(svgPath svg.SvgPath) error {
+	if svgPath.Style.FillerColor == nil ||
+		svgPath.Style.FillOpacity == 0 {
 		return nil
 	}
 
@@ -119,37 +116,37 @@ func (p *Path2) createFillPaint() error {
 	p.fillPaint.SetAntialias(true)
 	p.fillPaint.SetStyle(paintstyle.Fill)
 
-	if color, ok := p.svgPath.Style.FillerColor.(svg.PlainColor); ok {
+	if color, ok := svgPath.Style.FillerColor.(svg.PlainColor); ok {
 		alpha := float32(color.A) / 0xFF
-		alpha *= float32(p.svgPath.Style.FillOpacity)
+		alpha *= float32(svgPath.Style.FillOpacity)
 		p.fillPaint.SetColor(ARGB(alpha, int(color.R), int(color.G), int(color.B)))
 	} else {
-		return fmt.Errorf("unsupported path fill style %T", p.svgPath.Style.FillerColor)
+		return fmt.Errorf("unsupported path fill style %T", svgPath.Style.FillerColor)
 	}
 
 	return nil
 }
 
-func (p *Path2) createStrokePaint() error {
-	if p.svgPath.Style.LinerColor == nil ||
-		p.svgPath.Style.LineOpacity == 0 ||
-		p.svgPath.Style.LineWidth == 0 {
+func (p *Path2) createStrokePaint(svgPath svg.SvgPath) error {
+	if svgPath.Style.LinerColor == nil ||
+		svgPath.Style.LineOpacity == 0 ||
+		svgPath.Style.LineWidth == 0 {
 		return nil
 	}
 
 	p.strokePaint = NewPaint()
 	p.strokePaint.SetAntialias(true)
-	p.strokePaint.SetStrokeCap(strokeCaps[p.svgPath.Style.Join.TrailLineCap])
-	p.strokePaint.SetStrokeJoin(strokeJoins[p.svgPath.Style.Join.LineJoin])
-	p.strokePaint.SetStrokeWidth(float32(p.svgPath.Style.LineWidth))
+	p.strokePaint.SetStrokeCap(strokeCaps[svgPath.Style.Join.TrailLineCap])
+	p.strokePaint.SetStrokeJoin(strokeJoins[svgPath.Style.Join.LineJoin])
+	p.strokePaint.SetStrokeWidth(float32(svgPath.Style.LineWidth))
 	p.strokePaint.SetStyle(paintstyle.Stroke)
 
-	if color, ok := p.svgPath.Style.LinerColor.(svg.PlainColor); ok {
+	if color, ok := svgPath.Style.LinerColor.(svg.PlainColor); ok {
 		alpha := float32(color.A) / 0xFF
-		alpha *= float32(p.svgPath.Style.LineOpacity)
+		alpha *= float32(svgPath.Style.LineOpacity)
 		p.strokePaint.SetColor(ARGB(alpha, int(color.R), int(color.G), int(color.B)))
 	} else {
-		return fmt.Errorf("unsupported path stroke style %T", p.svgPath.Style.LinerColor)
+		return fmt.Errorf("unsupported path stroke style %T", svgPath.Style.LinerColor)
 	}
 
 	return nil
