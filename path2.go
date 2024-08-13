@@ -68,15 +68,19 @@ func newPath2(svgPath svg.SvgPath) (*Path2, error) {
 	return p, nil
 }
 
+// createPath creates a skia path from an svg.Path.
+//
+// The coordinates used in svg.Operation are of type fixed.Int26_6, which has a fractional
+// part of 6 bits. When converting to a float the values are divided by 64.
 func (p *Path2) createPath() {
 	p.path = skia.PathNew()
 
 	for _, op := range p.svgPath.Path {
 		switch op := op.(type) {
 		case svg.OpMoveTo:
-			skia.PathMoveTo(p.path, float32(op.X/64.0), float32(op.Y/64.0))
+			skia.PathMoveTo(p.path, float32(op.X)/64.0, float32(op.Y)/64.0)
 		case svg.OpLineTo:
-			skia.PathLineTo(p.path, float32(op.X/64.0), float32(op.Y/64.0))
+			skia.PathLineTo(p.path, float32(op.X)/64.0, float32(op.Y)/64.0)
 		case svg.OpQuadTo:
 			skia.PathQuadTo(p.path,
 				float32(op[0].X)/64.0, float32(op[0].Y)/64.0,
