@@ -66,25 +66,30 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 	r := ss.ContentRect(false)
 	unison.DrawRectBase(canvas, r, ss.bg, unison.Transparent)
 
-	svg := unison.DrawableSVG{
-		SVG: unison.CircledChevronRightSVG,
+	{
+		svg := unison.DrawableSVG{
+			SVG: unison.CircledChevronRightSVG,
+		}
+		paint := unison.NewPaint()
+		// paint.SetColor(unison.RGB(0xff, 0x00, 0x00))
+		svg.DrawInRect(canvas, unison.NewRect(0, 0, 100, 100), nil, paint)
 	}
-	paint := unison.NewPaint()
-	// paint.SetColor(unison.RGB(0xff, 0x00, 0x00))
-	svg.DrawInRect(canvas, unison.NewRect(0, 0, 100, 100), nil, paint)
 
-	svg2 := unison.DrawableSVG2{
-		SVG: unison.MustSVG2FromContentString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	{
+		svg := unison.DrawableSVG2{
+			SVG: unison.MustSVG2FromContentString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/>
 </svg>`),
+		}
+		svg.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, nil)
 	}
-	svg2.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, nil)
 
-	svg2Gopher := unison.DrawableSVG2{
-		SVG: unison.MustSVG2FromContentString(gopherSvg),
+	{
+		svg := unison.DrawableSVG2{
+			SVG: unison.MustSVG2FromContentString(gopherSvg),
+		}
+		gopherWidth := float32(200)
+		gopherHeight := gopherWidth / svg.SVG.AspectRatio()
+		svg.DrawInRect(canvas, unison.NewRect(50, 150, gopherWidth, gopherHeight), nil, nil)
 	}
-	gopherAspectRatio := svg2Gopher.SVG.Size().Width / svg2Gopher.SVG.Size().Height
-	gopherWidth := float32(200)
-	gopherHeight := gopherWidth / gopherAspectRatio
-	svg2Gopher.DrawInRect(canvas, unison.NewRect(50, 150, gopherWidth, gopherHeight), nil, nil)
 }

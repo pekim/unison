@@ -104,8 +104,9 @@ func NewSVG2FromReader(r io.Reader) (*SVG2, error) {
 	return s, nil
 }
 
-func (s *SVG2) Size() Size {
-	return s.size
+// AspectRatio returns the SVG's width to height ratio.
+func (s *SVG2) AspectRatio() float32 {
+	return s.size.Width / s.size.Height
 }
 
 // LogicalSize implements the Drawable interface.
