@@ -10,7 +10,6 @@
 package unison
 
 import (
-	_ "embed"
 	"io"
 	"strconv"
 	"strings"
