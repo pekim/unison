@@ -116,7 +116,9 @@ func (p *Path2) createFillPaint() error {
 	p.fillPaint.SetStyle(paintstyle.Fill)
 
 	if color, ok := p.svgPath.Style.FillerColor.(svg.PlainColor); ok {
-		p.fillPaint.SetColor(ARGB(float32(color.A)/0xFF, int(color.R), int(color.G), int(color.B)))
+		alpha := float32(color.A) / 0xFF
+		alpha *= float32(p.svgPath.Style.FillOpacity)
+		p.fillPaint.SetColor(ARGB(alpha, int(color.R), int(color.G), int(color.B)))
 	} else {
 		return fmt.Errorf("unsupported path fill style %T", p.svgPath.Style.FillerColor)
 	}
@@ -139,7 +141,9 @@ func (p *Path2) createStrokePaint() error {
 	p.strokePaint.SetStyle(paintstyle.Stroke)
 
 	if color, ok := p.svgPath.Style.LinerColor.(svg.PlainColor); ok {
-		p.strokePaint.SetColor(ARGB(float32(color.A)/0xFF, int(color.R), int(color.G), int(color.B)))
+		alpha := float32(color.A) / 0xFF
+		alpha *= float32(p.svgPath.Style.LineOpacity)
+		p.strokePaint.SetColor(ARGB(alpha, int(color.R), int(color.G), int(color.B)))
 	} else {
 		return fmt.Errorf("unsupported path stroke style %T", p.svgPath.Style.LinerColor)
 	}
