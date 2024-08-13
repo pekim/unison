@@ -12,6 +12,9 @@ var gopherSvg string
 //go:embed tiger.svg
 var tigerSvg string
 
+//go:embed black-king.svg
+var blackKingSvg string
+
 func main() {
 	unison.AttachConsole()
 	unison.Start(unison.StartupFinishedCallback(func() {
@@ -103,5 +106,14 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 		width := float32(400)
 		height := width / svg.SVG.AspectRatio()
 		svg.DrawInRect(canvas, unison.NewRect(300, 150, width, height), nil, nil)
+	}
+
+	{
+		svg := unison.DrawableSVG2{
+			SVG: unison.MustSVG2FromContentString(blackKingSvg),
+		}
+		width := float32(120)
+		height := width / svg.SVG.AspectRatio()
+		svg.DrawInRect(canvas, unison.NewRect(50, 450, width, height), nil, nil)
 	}
 }
