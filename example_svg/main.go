@@ -42,7 +42,7 @@ type svgs struct {
 
 func newSVGs() *svgs {
 	ss := &svgs{
-		bg: unison.MustColorDecode("#ff80e0"),
+		bg: unison.MustColorDecode("#ffc0f0"),
 	}
 	ss.DrawCallback = ss.defaultDraw
 	ss.SetSizer(ss.defaultSizes)
@@ -74,6 +74,7 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 	}
 
 	paint := unison.NewPaint()
+	// paint.SetColor(unison.RGB(0xff, 0x00, 0x00))
 	svg.DrawInRect(canvas, unison.NewRect(0, 0, 100, 100), nil, paint)
-	svg2.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, paint)
+	svg2.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, nil)
 }
