@@ -117,11 +117,9 @@ func (s *DrawableSVG2) LogicalSize() Size {
 func (s *DrawableSVG2) DrawInRect(canvas *Canvas, rect Rect, _ *SamplingOptions, _ *Paint) {
 	canvas.Save()
 	defer canvas.Restore()
-	// offset := s.SVG.OffsetToCenterWithinScaledSize(rect.Size)
-	// var offset Point
+
 	canvas.Translate(rect.X, rect.Y)
 	canvas.Scale(rect.Width/s.SVG.size.Width, rect.Height/s.SVG.size.Height)
-	// canvas.DrawPath(s.SVG.PathForSize(rect.Size), paint)
 
 	for _, path := range s.SVG.paths {
 		path.draw(canvas)
