@@ -104,6 +104,10 @@ func NewSVG2FromReader(r io.Reader) (*SVG2, error) {
 	return s, nil
 }
 
+func (s *SVG2) Size() Size {
+	return s.size
+}
+
 // LogicalSize implements the Drawable interface.
 func (s *DrawableSVG2) LogicalSize() Size {
 	return s.Size
