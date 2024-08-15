@@ -16,6 +16,50 @@ var tigerSvg string
 //go:embed black-king.svg
 var blackKingSvg string
 
+//go:embed linear-gradient.svg
+var linearGradientSvg string
+
+//go:embed linear-gradient-stroke.svg
+var linearGradientStrokeSvg string
+
+//go:embed radial-gradient.svg
+var radialGradientSvg string
+
+//go:embed two-point-conical-gradient.svg
+var twoPointConicalGradientSvg string
+
+var circledChevronRight = unison.DrawableSVG{
+	SVG: unison.CircledChevronRightSVG,
+}
+
+var blackKing = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(blackKingSvg),
+}
+
+var gopher = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(gopherSvg),
+}
+
+var tiger = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(tigerSvg),
+}
+
+var linearGradient = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(linearGradientSvg),
+}
+
+var linearGradientStroke = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(linearGradientStrokeSvg),
+}
+
+var radialGradient = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(radialGradientSvg),
+}
+
+var twoPointConicalGradient = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(twoPointConicalGradientSvg),
+}
+
 func main() {
 	unison.AttachConsole()
 	unison.Start(unison.StartupFinishedCallback(func() {
@@ -54,7 +98,8 @@ type svgs struct {
 
 func newSVGs() *svgs {
 	ss := &svgs{
-		bg: unison.MustColorDecode("#ffc0f0"),
+		// bg: unison.MustColorDecode("#ffc0f0"),
+		bg: unison.MustColorDecode("#ffffff"),
 	}
 	ss.DrawCallback = ss.defaultDraw
 	ss.SetSizer(ss.defaultSizes)
@@ -63,8 +108,8 @@ func newSVGs() *svgs {
 
 func (ss *svgs) defaultSizes(_ unison.Size) (minSize, prefSize, maxSize unison.Size) {
 	size := unison.Size{
-		Width:  800,
-		Height: 800,
+		Width:  1000,
+		Height: 1000,
 	}
 	return size, size, size
 }
@@ -74,52 +119,60 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 	unison.DrawRectBase(canvas, r, ss.bg, unison.Transparent)
 
 	{
-		svg := unison.DrawableSVG{
-			SVG: unison.CircledChevronRightSVG,
-		}
-		svg.DrawInRect(canvas, unison.NewRect(0, 0, 100, 100), nil, nil)
+		circledChevronRight.DrawInRect(canvas, unison.NewRect(0, 0, 100, 100), nil, nil)
 	}
 
 	{
-		svg := unison.DrawableSVG{
-			SVG: unison.CircledChevronRightSVG,
-		}
 		paint := unison.NewPaint()
 		paint.SetColor(unison.RGB(0xff, 0x00, 0x00))
 		paint.SetStyle(paintstyle.Fill)
-		svg.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, paint)
+		circledChevronRight.DrawInRect(canvas, unison.NewRect(150, 0, 100, 100), nil, paint)
 	}
 
 	{
-
-		svg := unison.DrawableSVG{
-			SVG: unison.MustSVGFromContentString(blackKingSvg),
-		}
 		width := float32(120)
-		height := width / svg.SVG.AspectRatio()
+		height := width / blackKing.SVG.AspectRatio()
 
 		bg := unison.NewPaint()
 		bg.SetColor(unison.RGB(0x00, 0xff, 0x00))
 		rect := unison.NewRect(300, 0, width, height)
 		canvas.DrawRect(rect, bg)
-		svg.DrawInRect(canvas, rect, nil, nil)
+		blackKing.DrawInRect(canvas, rect, nil, nil)
 	}
 
 	{
-		svg := unison.DrawableSVG{
-			SVG: unison.MustSVGFromContentString(gopherSvg),
-		}
 		width := float32(200)
-		height := width / svg.SVG.AspectRatio()
-		svg.DrawInRect(canvas, unison.NewRect(50, 150, width, height), nil, nil)
+		height := width / gopher.SVG.AspectRatio()
+		gopher.DrawInRect(canvas, unison.NewRect(50, 150, width, height), nil, nil)
 	}
 
 	{
-		svg := unison.DrawableSVG{
-			SVG: unison.MustSVGFromContentString(tigerSvg),
-		}
 		width := float32(400)
-		height := width / svg.SVG.AspectRatio()
-		svg.DrawInRect(canvas, unison.NewRect(300, 150, width, height), nil, nil)
+		height := width / tiger.SVG.AspectRatio()
+		tiger.DrawInRect(canvas, unison.NewRect(300, 150, width, height), nil, nil)
+	}
+
+	{
+		width := float32(150)
+		height := width / linearGradient.SVG.AspectRatio()
+		linearGradient.DrawInRect(canvas, unison.NewRect(50, 450, width, height), nil, nil)
+	}
+
+	{
+		width := float32(400)
+		height := width / linearGradientStroke.SVG.AspectRatio()
+		linearGradientStroke.DrawInRect(canvas, unison.NewRect(250, 600, width, height), nil, nil)
+	}
+
+	{
+		width := float32(180)
+		height := width / radialGradient.SVG.AspectRatio()
+		radialGradient.DrawInRect(canvas, unison.NewRect(50, 800, width, height), nil, nil)
+	}
+
+	{
+		width := float32(180)
+		height := width / twoPointConicalGradient.SVG.AspectRatio()
+		twoPointConicalGradient.DrawInRect(canvas, unison.NewRect(350, 800, width, height), nil, nil)
 	}
 }

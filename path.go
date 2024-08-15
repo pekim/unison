@@ -10,6 +10,7 @@
 package unison
 
 import (
+	"errors"
 	"image/color"
 	"runtime"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/richardwilkes/unison/enums/pathop"
 	"github.com/richardwilkes/unison/enums/strokecap"
 	"github.com/richardwilkes/unison/enums/strokejoin"
+	"github.com/richardwilkes/unison/enums/tilemode"
 	"github.com/richardwilkes/unison/internal/skia"
 )
 
@@ -37,6 +39,12 @@ var strokeJoins = map[svg.JoinMode]strokejoin.Enum{
 	svg.Round: strokejoin.Round,
 	svg.Bevel: strokejoin.Bevel,
 	svg.Miter: strokejoin.Miter,
+}
+
+var gradientSpreads = map[svg.SpreadMethod]tilemode.Enum{
+	svg.PadSpread:     tilemode.Clamp,
+	svg.ReflectSpread: tilemode.Mirror,
+	svg.RepeatSpread:  tilemode.Repeat,
 }
 
 // PathOpPair holds the combination of a Path and a PathOp.
@@ -126,15 +134,7 @@ func (p *Path) createPath(svgPath svg.SvgPath) {
 	}
 
 	if svgPath.Style.Transform != svg.Identity {
-		p.Transform(
-			geom.Matrix[float32]{
-				ScaleX: float32(svgPath.Style.Transform.A),
-				SkewX:  float32(svgPath.Style.Transform.C),
-				TransX: float32(svgPath.Style.Transform.E),
-				SkewY:  float32(svgPath.Style.Transform.B),
-				ScaleY: float32(svgPath.Style.Transform.D),
-				TransY: float32(svgPath.Style.Transform.F),
-			})
+		p.Transform(matrixFromSvgMatrix(svgPath.Style.Transform))
 	}
 }
 
@@ -146,19 +146,8 @@ func (p *Path) createFillPaint(svgPath svg.SvgPath) error {
 
 	p.fillPaint = NewPaint()
 	p.fillPaint.SetStyle(paintstyle.Fill)
-
-	if col, ok := svgPath.Style.FillerColor.(svg.PlainColor); ok {
-		alpha := uint8(float64(col.A) * svgPath.Style.FillOpacity)
-		p.fillPaint.SetColor(ColorFromNRGBA(color.NRGBA{A: alpha, R: col.R, G: col.G, B: col.B}))
-	} else {
-		if p.ignoreUnsupported {
-			p.fillPaint.SetColor(Black)
-		} else {
-			return errs.Newf("unsupported path fill style %T", svgPath.Style.FillerColor)
-		}
-	}
-
-	return nil
+	err := p.setPaintPattern(*p.fillPaint, svgPath.Style.FillerColor, svgPath.Style.FillOpacity)
+	return err
 }
 
 func (p *Path) createStrokePaint(svgPath svg.SvgPath) error {
@@ -191,19 +180,90 @@ func (p *Path) createStrokePaint(svgPath svg.SvgPath) error {
 	p.strokePaint.SetStrokeMiter(float32(svgPath.Style.Join.MiterLimit))
 	p.strokePaint.SetStrokeWidth(float32(svgPath.Style.LineWidth))
 	p.strokePaint.SetStyle(paintstyle.Stroke)
+	err := p.setPaintPattern(*p.strokePaint, svgPath.Style.LinerColor, svgPath.Style.LineOpacity)
+	return err
+}
 
-	if col, ok := svgPath.Style.LinerColor.(svg.PlainColor); ok {
-		alpha := uint8(float64(col.A) * svgPath.Style.FillOpacity)
-		p.strokePaint.SetColor(ColorFromNRGBA(color.NRGBA{A: alpha, R: col.R, G: col.G, B: col.B}))
-	} else {
-		if p.ignoreUnsupported {
-			p.fillPaint.SetColor(Black)
-		} else {
-			return errs.Newf("unsupported path stroke style %T", svgPath.Style.LinerColor)
+func (p *Path) setPaintPattern(paint Paint, pattern svg.Pattern, opacity float64) error {
+	switch pat := pattern.(type) {
+	case svg.PlainColor:
+		plainColor := pat
+		paint.SetColor(ColorFromNRGBA(color.NRGBA{
+			A: uint8(float64(plainColor.A) * opacity),
+			R: plainColor.R,
+			G: plainColor.G,
+			B: plainColor.B,
+		}))
+
+	case svg.Gradient:
+		gradient := pat
+		if gradient.Units == svg.UserSpaceOnUse {
+			// Haven't figured out how to support userSpaceOnUse yet.
+			if p.ignoreUnsupported {
+				paint.SetColor(Black)
+				return nil
+			} else {
+				return errors.New(`gradientUnits="userSpaceOnUse" not supported`)
+			}
 		}
+
+		colors := make([]Color, len(gradient.Stops))
+		colorsPos := make([]float32, len(gradient.Stops))
+		for i, stop := range gradient.Stops {
+			r, g, b, a := stop.StopColor.RGBA()
+			colors[i] = ColorFromNRGBA(color.NRGBA{
+				A: uint8(uint(float64(a)*stop.Opacity*opacity) >> 8),
+				R: uint8(r >> 8),
+				G: uint8(g >> 8),
+				B: uint8(b >> 8),
+			})
+			colorsPos[i] = float32(stop.Offset)
+		}
+		tileMode := gradientSpreads[gradient.Spread]
+		matrix := matrixFromSvgMatrix(gradient.Matrix)
+
+		var shader *Shader
+		switch dir := gradient.Direction.(type) {
+		case svg.Linear:
+			x1, y1, x2, y2 := dir[0], dir[1], dir[2], dir[3]
+			start := p.gradientPoint(x1, y1)
+			end := p.gradientPoint(x2, y2)
+			shader = NewLinearGradientShader(start, end, colors, colorsPos, tileMode, matrix)
+
+		case svg.Radial:
+			cx, cy, fx, fy, r, fr := dir[0], dir[1], dir[2], dir[3], dir[4], dir[5]
+			if cx == fx && cy == fy {
+				center := p.gradientPoint(cx, cy)
+				radius := p.gradientRadius(r)
+				shader = NewRadialGradientShader(center, radius, colors, colorsPos, tileMode, matrix)
+			} else {
+				start := p.gradientPoint(fx, fy)
+				end := p.gradientPoint(cx, cy)
+				startRadius := p.gradientRadius(fr)
+				endRadius := p.gradientRadius(r)
+				shader = New2PtConicalGradientShader(start, end, startRadius, endRadius, colors, colorsPos, tileMode, matrix)
+			}
+		}
+
+		paint.SetShader(shader)
 	}
 
 	return nil
+}
+
+func (p *Path) gradientPoint(x, y float64) geom.Point[float32] {
+	bounds := p.Bounds()
+	return geom.Point[float32]{
+		X: bounds.X + (bounds.Width * float32(x)),
+		Y: bounds.Y + (bounds.Height * float32(y)),
+	}
+}
+
+func (p *Path) gradientRadius(r float64) float32 {
+	bounds := p.Bounds()
+	// TODO how to handle radius properly when bounds are not a square?
+	// For now just use the average of the width and height.
+	return ((bounds.Width + bounds.Height) / 2) * float32(r)
 }
 
 // ToSVGString returns an SVG string that represents this path.
@@ -524,4 +584,15 @@ func pathAddMode(extend bool) skia.PathAddMode {
 		return skia.PathAddModeExtend
 	}
 	return skia.PathAddModeAppend
+}
+
+func matrixFromSvgMatrix(matrix svg.Matrix2D) geom.Matrix[float32] {
+	return geom.Matrix[float32]{
+		ScaleX: float32(matrix.A),
+		SkewX:  float32(matrix.C),
+		TransX: float32(matrix.E),
+		SkewY:  float32(matrix.B),
+		ScaleY: float32(matrix.D),
+		TransY: float32(matrix.F),
+	}
 }
