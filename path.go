@@ -136,6 +136,12 @@ func (p *Path) createPath(svgPath svg.SvgPath) {
 	if svgPath.Style.Transform != svg.Identity {
 		p.Transform(matrixFromSvgMatrix(svgPath.Style.Transform))
 	}
+
+	if svgPath.Style.UseNonZeroWinding {
+		p.SetFillType(filltype.Winding)
+	} else {
+		p.SetFillType(filltype.EvenOdd)
+	}
 }
 
 func (p *Path) createFillPaint(svgPath svg.SvgPath) error {
