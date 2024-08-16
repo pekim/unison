@@ -180,6 +180,20 @@ func (p *Path) createStrokePaint(svgPath svg.SvgPath) error {
 	p.strokePaint.SetStrokeMiter(float32(svgPath.Style.Join.MiterLimit))
 	p.strokePaint.SetStrokeWidth(float32(svgPath.Style.LineWidth))
 	p.strokePaint.SetStyle(paintstyle.Stroke)
+	if len(svgPath.Style.Dash.Dash) > 0 {
+		intervals := make([]float32, len(svgPath.Style.Dash.Dash))
+		for i, interval := range svgPath.Style.Dash.Dash {
+			intervals[i] = float32(interval)
+		}
+		if len(intervals)%2 == 1 {
+			// There must be an even number of intervals.
+			// see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray
+			// skia will return a nil effect if provided with an odd number of intervals.
+			intervals = append(intervals, intervals...)
+		}
+		dashEffect := NewDashPathEffect(intervals, float32(svgPath.Style.Dash.DashOffset))
+		p.strokePaint.SetPathEffect(dashEffect)
+	}
 	err := p.setPaintPattern(*p.strokePaint, svgPath.Style.LinerColor, svgPath.Style.LineOpacity)
 	return err
 }

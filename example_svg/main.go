@@ -16,6 +16,9 @@ var tigerSvg string
 //go:embed black-king.svg
 var blackKingSvg string
 
+//go:embed dash.svg
+var dashSvg string
+
 //go:embed linear-gradient.svg
 var linearGradientSvg string
 
@@ -34,6 +37,10 @@ var circledChevronRight = unison.DrawableSVG{
 
 var blackKing = unison.DrawableSVG{
 	SVG: unison.MustSVGFromContentString(blackKingSvg),
+}
+
+var dash = unison.DrawableSVG{
+	SVG: unison.MustSVGFromContentString(dashSvg),
 }
 
 var gopher = unison.DrawableSVG{
@@ -138,6 +145,12 @@ func (ss *svgs) defaultDraw(canvas *unison.Canvas, _ unison.Rect) {
 		rect := unison.NewRect(300, 0, width, height)
 		canvas.DrawRect(rect, bg)
 		blackKing.DrawInRect(canvas, rect, nil, nil)
+	}
+
+	{
+		width := float32(200)
+		height := width / dash.SVG.AspectRatio()
+		dash.DrawInRect(canvas, unison.NewRect(500, 25, width, height), nil, nil)
 	}
 
 	{
