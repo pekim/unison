@@ -71,6 +71,11 @@ typedef struct {
 // ===== Types from include/core/SkSize.h =====
 
 typedef struct {
+    float w;
+    float h;
+} sk_size_t;
+
+typedef struct {
     int32_t w;
     int32_t h;
 } sk_isize_t;
@@ -568,6 +573,7 @@ typedef struct {
 typedef struct sk_wstream_t sk_wstream_t;
 typedef struct sk_file_wstream_t sk_file_wstream_t;
 typedef struct sk_dynamic_memory_wstream_t sk_dynamic_memory_wstream_t;
+typedef struct sk_memory_stream_t sk_memory_stream_t;
 
 // ===== Types from include/docs/SkPDFDocument.h =====
 
@@ -588,6 +594,11 @@ typedef struct {
 // ===== Types from include/core/SkDocument.h =====
 
 typedef struct sk_document_t sk_document_t;
+
+// ===== Types from modules/svg/include/SkSVGDOM.h =====
+
+typedef struct sk_svgdom_t sk_svgdom_t;
+typedef struct sk_svgsvg_t sk_svgsvg_t;
 
 
 // ======================================================
@@ -932,6 +943,9 @@ SK_C_API size_t sk_file_wstream_bytes_written(sk_file_wstream_t* stream);
 SK_C_API void sk_file_wstream_flush(sk_file_wstream_t* stream);
 SK_C_API void sk_file_wstream_delete(sk_file_wstream_t* stream);
 
+SK_C_API sk_memory_stream_t* sk_memory_stream_make_copy(const void* data, size_t length);
+SK_C_API void sk_memory_stream_delete(sk_memory_stream_t *stream);
+
 // ===== Functions from include/core/SKDocument.h =====
 SK_C_API sk_canvas_t* sk_document_begin_page(sk_document_t* doc, float width, float height);
 SK_C_API void sk_document_end_page(sk_document_t* doc);
@@ -943,6 +957,14 @@ SK_C_API sk_document_t* sk_document_make_pdf(sk_wstream_t* stream, sk_metadata_t
 
 // ===== Functions from include/codec/SkCodec.h =====
 SK_C_API void register_image_codecs();
+
+// ===== Functions from modules/svg/include/SkSVGDOM.h =====
+SK_C_API sk_svgdom_t* sk_svgdom_make_from_stream(sk_memory_stream_t *stream);
+SK_C_API void sk_svgdom_delete(sk_svgdom_t *dom);
+SK_C_API sk_svgsvg_t* sk_svgdom_get_root(sk_svgdom_t *dom);
+SK_C_API void sk_svgdom_render(sk_svgdom_t *dom, sk_canvas_t *canvas);
+SK_C_API void sk_svgdom_set_container_size(sk_svgdom_t *dom, float width, float height);
+SK_C_API sk_size_t sk_svgsvg_intrinsic_size(sk_svgsvg_t *svg);
 
 #ifdef __cplusplus
 }

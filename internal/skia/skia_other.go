@@ -14,9 +14,9 @@ package skia
 /*
 #cgo CFLAGS: -I${SRCDIR}
 #cgo darwin LDFLAGS: -L${SRCDIR} -lc++ -framework Cocoa -framework Metal -ld_classic
-#cgo darwin,amd64 LDFLAGS: -lskia_darwin_amd64
-#cgo darwin,arm64 LDFLAGS: -lskia_darwin_arm64
-#cgo linux LDFLAGS: -L${SRCDIR} -lskia_linux -lfontconfig -lfreetype -lGL -ldl -lm -lstdc++
+#cgo darwin,amd64 LDFLAGS: -lskia_darwin_amd64 -lsvg_darwin_amd64 -lskshaper_darwin_amd64
+#cgo darwin,arm64 LDFLAGS: -lskia_darwin_arm64 -lsvg_darwin_arm64 -lskshaper_darwin_arm64
+#cgo linux LDFLAGS: -L${SRCDIR} -lskia_linux -lsvg_linux -lskshaper_linux -lfontconfig -lfreetype -lGL -ldl -lm -lstdc++
 
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +50,7 @@ type (
 	Image                = *C.sk_image_t
 	ImageFilter          = *C.sk_image_filter_t
 	MaskFilter           = *C.sk_mask_filter_t
+	MemoryStream         = *C.sk_memory_stream_t
 	OpBuilder            = *C.sk_op_builder_t
 	Paint                = *C.sk_paint_t
 	Path                 = *C.sk_path_t
@@ -59,6 +60,8 @@ type (
 	String               = *C.sk_string_t
 	Surface              = *C.sk_surface_t
 	SurfaceProps         = *C.sk_surface_props_t
+	SVGDOM               = *C.sk_svgdom_t
+	SVGSVG               = *C.sk_svgsvg_t
 	TextBlob             = *C.sk_text_blob_t
 	TextBlobBuilder      = *C.sk_text_blob_builder_t
 	TypeFace             = *C.sk_typeface_t
@@ -748,6 +751,14 @@ func MaskFilterUnref(filter MaskFilter) {
 	C.sk_maskfilter_unref(filter)
 }
 
+func MemoryStreamMakeCopy(data []byte) MemoryStream {
+	return C.sk_memory_stream_make_copy(unsafe.Pointer(&data[0]), C.size_t(len(data)))
+}
+
+func MemoryStreamDelete(stream MemoryStream) {
+	C.sk_memory_stream_delete(stream)
+}
+
 func OpBuilderNew() OpBuilder {
 	return C.sk_opbuilder_new()
 }
@@ -1221,6 +1232,31 @@ func SurfaceUnref(aSurface Surface) {
 
 func SurfacePropsNew(geometry PixelGeometry) SurfaceProps {
 	return C.sk_surfaceprops_new(0, C.sk_pixel_geometry_t(geometry))
+}
+
+func SVGDOMMakeFromStream(stream MemoryStream) SVGDOM {
+	return C.sk_svgdom_make_from_stream(stream)
+}
+
+func SVGDOMDelete(dom SVGDOM) {
+	C.sk_svgdom_delete(dom)
+}
+
+func SVGDOMGetRoot(dom SVGDOM) SVGSVG {
+	return C.sk_svgdom_get_root(dom)
+}
+
+func SVGDOMRender(dom SVGDOM, canvas Canvas) {
+	C.sk_svgdom_render(dom, canvas)
+}
+
+func SVGDOMSetContainerSize(dom SVGDOM, width float32, height float32) {
+	C.sk_svgdom_set_container_size(dom, C.float(width), C.float(height))
+}
+
+func SVGSVGIntrinsicSize(svg SVGSVG) (float32, float32) {
+	size := C.sk_svgsvg_intrinsic_size(svg)
+	return float32(size.w), float32(size.h)
 }
 
 func TextBlobMakeFromText(text string, font Font) TextBlob {
